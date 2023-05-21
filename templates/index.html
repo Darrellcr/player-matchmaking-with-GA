@@ -1,0 +1,12 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock css %}
+
+{% block content %}
+    <h1>{{ posts.title }}</h1>
+    {% for player in posts.player_pool: %}
+        <p>{{ player }}</p>
+    {% endfor %}
+{% endblock content %}
