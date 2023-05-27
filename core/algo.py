@@ -2,7 +2,7 @@ import random
 
 from player import Team
 
-
+# SELECTION START
 def roulette_wheel_selection(team_pool, num_teams):
     selected_teams = []
     for _ in range(num_teams):
@@ -53,3 +53,5 @@ for data in teamPool:
     print("========= Team " + str(data.id) + " =========")
     print("MMR: " + str(data.mmr))
     print("Fitness: " + str(data.fitness))
+    
+# SELECTION END
