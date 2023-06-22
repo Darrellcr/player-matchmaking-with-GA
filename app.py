@@ -27,6 +27,7 @@ def index(page):
     global generation, player_pool_list, role_img_map, best_fitness_over_generation
     form: GeneratePlayerPoolForm = GeneratePlayerPoolForm()
     if form.validate_on_submit():
+        best_fitness_over_generation = []
         player_pool = Player.generate_player_pool(form.total_player.data)
         player_pool_list = list(player_pool)
         team_pool = Team.generate_team_pool(
@@ -93,6 +94,7 @@ def play_now_page():
     global generation, player_pool_list, best_fitness_over_generation
     form: InputtedPlayerForm = InputtedPlayerForm()
     if form.validate_on_submit():
+        best_fitness_over_generation = []
         player_pool = Player.generate_player_pool(1000)
         team_pool = Team.generate_team_pool(
             player_pool,
