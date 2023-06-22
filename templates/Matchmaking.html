@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matchmaking</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+      crossorigin="anonymous"
+    />
+    <style>
+      @font-face {
+        font-family: 'ElMessiri';
+        src: url("{{ url_for('static', filename='assetFont/static/ElMessiri-Medium.ttf')}}");
+      }
+      h1 {
+        text-align: center;
+        padding-top: 30px;
+        font-weight: 900;
+      }
+
+      .container-fluid {
+        height: auto;
+        background-color: rgba(14, 0, 45, 1);
+      }
+
+      .card {
+        height: auto;
+        width: 150px;
+        margin-left: 150px;
+      }
+
+      img {
+        height: 150px;
+        width: 150px;
+      }
+
+      .row {
+        padding-right: 20px;
+        margin-top: 40px;
+      }
+
+      .judulteam1 {
+        color: yellow;
+      }
+
+      .tulisanbawah {
+        color: yellow;
+        padding-left: 160px;
+      }
+
+      .tombol {
+        margin: auto;
+        width: 50%;
+        padding: 10px;
+      }
+
+      .btn {
+        width: 180px;
+      }
+
+      h1 {
+        padding-top: 50px;
+      }
+
+      .gambarHome{
+        height: 0px;
+        padding-top: 10px;
+      }
+
+      .judulteam1{
+        font-family: 'ElMessiri';
+      }
+    </style>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="gambarHome d-flex justify-content-start">
+        <a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='img/home.png') }}" style="height: 50px; width: 50px; cursor: pointer;"> </a>
+      </div>
+      <h2 class="d-flex justify-content-end" style="color:yellow"> Fitness : {{ "%.2f"|format(individual.calculate_fitness()) }}</h2>
+      <h1 style="color: white">DETAIL INDIVIDU</h1>
+      <div class="row" style="margin-right: 30px">
+        <h3 class="judulteam1 text-center mx-4" style="margin-bottom: 10px">
+          TEAM 1
+        </h3>
+        {% for player in individual.team1.players %}
+          <div class="col-2">
+            <div class="card">
+              {% set img_path = role_img_map[player.most_played_role] %}
+              <img src="{{ url_for('static', filename='img/' ~ img_path) }}" class="card-img-top" alt="..." />
+              <div class="card-body {{ 'bg-warning' if player.is_inputted else '' }}">
+                <p class="card-text">{{ player.most_played_role.name.capitalize() }}</p>
+                <p class="card-text">MMR : {{ player.mmr }}</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        <p class="tulisanbawah" style="margin-top: 20px">Mean Team : {{ "%.2f"|format(individual.team1.calculate_mmr_mean()) }}</p>
+        <p class="tulisanbawah">Standar Deviasi Team : {{ "%.2f"|format(individual.team1.calculate_mmr_std()) }}</p>
+      </div>
+      <div class="row mt-5" style="margin-right: 30px">
+        <h3 class="judulteam1 text-center mx-4" style="margin-bottom: 10px">
+          TEAM 2
+        </h3>
+        {% for player in individual.team2.players %}
+          <div class="col-2">
+            <div class="card">
+              {% set img_path = role_img_map[player.most_played_role] %}
+              <img src="{{ url_for('static', filename='img/' ~ img_path) }}" class="card-img-top" alt="..." />
+              <div class="card-body {{ 'bg-warning' if player.is_inputted else '' }}">
+                <p class="card-text">{{ player.most_played_role.name.capitalize() }}</p>
+                <p class="card-text">MMR : {{ player.mmr }}</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        <p class="tulisanbawah" style="margin-top: 20px">Mean Team : {{ "%.2f"|format(individual.team2.calculate_mmr_mean()) }}</p>
+        <p class="tulisanbawah">Standar Deviasi Team : {{ "%.2f"|format(individual.team2.calculate_mmr_std()) }}</p>
+      </div>
+      <div class="tombol" style="padding-left: 100px">
+        <div class="row mb-5">
+          <div class="col-4">
+            <a href="{{ url_for('matchmaking', individual_idx=individual_idx-1) if individual_idx > 0 else '#' }}"><button type="button" class="btn btn-secondary">Prev</button></a>
+          </div>
+          <div class="col-4" style="margin-left: 50px">
+            <a href="{{ url_for('matchmaking', individual_idx=individual_idx+1) if individual_idx < max_idx else '#' }}"><button type="button" class="btn btn-secondary">Next</button></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

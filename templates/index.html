@@ -1,12 +1,243 @@
-{% extends 'layout.html' %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-{% endblock css %}
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halaman role</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+    crossorigin="anonymous"></script>
+  <style>
+    @font-face {
+      font-family: 'ElMessiri';
+      src: url("{{ url_for('static', filename='assetFont/static/ElMessiri-Medium.ttf') }}");
+    }
 
-{% block content %}
-    <h1>{{ posts.title }}</h1>
-    {% for player in posts.player_pool: %}
-        <p>{{ player }}</p>
-    {% endfor %}
-{% endblock content %}
+    .container-fluid {
+      height: 190vh;
+      background-color: rgba(14, 0, 45, 1);
+    }
+
+    h2 {
+      font-weight: lighter;
+    }
+
+    button {
+      height: 35px;
+      width: 200px;
+      margin-left: 250px;
+    }
+
+    .dropdown {
+      width: 50px;
+      margin-left: 370px;
+    }
+
+    .card {
+      width: 170px;
+
+    }
+
+    .kotak {
+      height: 400px;
+      background-color: #0F1118;
+      border-color: #FFD37E;
+    }
+
+    .judulform {
+
+      background-color: #7A7369;
+      height: 50px;
+    }
+
+    .tulisan {
+      color: #FFA15C;
+      padding-top: 10px;
+    }
+
+    .totalplayer {
+      font-size: larger;
+      color: #FFA15C;
+      margin-top: 20px;
+      margin-left: 20px;
+    }
+
+    .formtotal {
+      width: 250px;
+      margin-left: 15px;
+    }
+
+    .kotakFitness {
+      height: 200px;
+    }
+
+    .tombol {
+      font-family: 'ElMessiri';
+      background-color: #1F1D19;
+      border-color: #FFD37E;
+    }
+
+    .playnow {
+      width: 300px;
+      height: 60px;
+      font-family: 'ElMessiri';
+      font-weight: bolder;
+
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid pt-4">
+    <div class="row">
+      <div class="col-7">
+        <h2 class="d-flex justify-content-end fw-bold" style="color: white;">Generation {{ generation_number if generation_number == 0 or generation_number else '-' }} </h2>
+      </div>
+      <div class="col-5">
+        <div class="row">
+          <div class="col-2">
+            <a href="{{ url_for('next_generation') }}" class="btn btn-secondary border rounded my-1" style="margin-left: 320px; width: 150px">NEXT</a>
+          </div>
+          <div class="col-2">
+            <div class="buttondropdown">
+              <button class="btn btn-secondary border rounded my-1 dropdown dropdown-toggle" type="button"
+                data-bs-toggle="dropdown"></button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{ url_for('next_generation', repeat='2') }}">Next 2x</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('next_generation', repeat='5') }}">Next 5x</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('next_generation', repeat='8') }}">Next 8x</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('next_generation', repeat='10') }}">Next 10x</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row my-5 mx-5">
+      <div class="col-8 border">
+        {% if partial_player_pool %}
+          <div class="row">
+            {% for players in partial_player_pool|batch(3) %}
+              {% for player in players %}
+                <div class="col-2 mx-5 my-3">
+                  <div class="card">
+                    {% set img_path = role_img_map[player.most_played_role] %}
+                    <img src="{{ url_for('static', filename='img/' ~ img_path) }}" class="card-img-top" alt="..." width="80" height="145" />
+                    <div class="card-body {{ 'bg-warning' if player.is_inputted else '' }}">
+                      <p class="card-text">Role : {{ player.most_played_role.name.capitalize() }}</p>
+                      <p class="card-text">MMR : {{ player.mmr }}</p>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endfor %}
+          </div>
+          {{ pagination.links }}
+        {% else %}
+          <div class="text-center text-white fs-3 fw-bold">Empty</div>
+        {% endif %}
+      </div>
+      <div class="col-4">
+        <div class="kotak border">
+          <div class="judulform">
+            <h3 class="tulisan d-flex justify-content-center" style="font-family: ElMessiri;">FORM</h3>
+          </div>
+          <div class="form">
+            <form action="" method="POST">
+              {{ form.total_player.label(class='totalplayer', style='font-family: "ElMessiri"') }}
+              {{ form.total_player(class='form-control formtotal') }}
+              {{ form.pct_player_join_team.label(class='totalplayer', style='font-family: "ElMessiri"') }}
+              {{ form.pct_player_join_team(class='form-control formtotal') }}
+              {{ form.mutation_rate.label(class='totalplayer', style='font-family: "ElMessiri"') }}
+              {{ form.mutation_rate(class='form-control formtotal') }}
+              {{ form.submit(class='border totalplayer my-4 tombol py-1 px-5', style='margin-left: 75px;') }}
+            </form>
+          </div>
+        </div>
+
+        <div class="kotak border my-5">
+          <div class="judulform">
+            <h3 class="tulisan d-flex justify-content-center" style="font-family: ElMessiri;">HASIL</h3>
+          </div>
+          <p class="totalplayer" style="font-family: 'ElMessiri';">Total Player : {{ total_player }}</p>
+
+          <p class="totalplayer my-4" style="font-family: 'ElMessiri';">Total Team : {{ total_team }}</p>
+
+          <p class="totalplayer my-4" style="font-family: 'ElMessiri';">Total Individuals : {{ total_individual }} </p>
+
+          <p class="totalplayer" style="font-family: 'ElMessiri';">Total Player dalam Populasi : {{ total_player_in_population }}</p>
+
+          <button class="border tombol totalplayer my-4" style="margin-left: 75px;" data-bs-toggle="modal" data-bs-target="#chartModal">Chart</button>
+        </div>
+        
+        <div class="modal fade" id="chartModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <canvas id="best-fitness"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kotak border my-5 kotakFitness">
+          <div class="judulform">
+            <h3 class="tulisan d-flex justify-content-center" style="font-family: ElMessiri;">HASIL</h3>
+          </div>
+          <p class="totalplayer" style="font-family: 'ElMessiri';">Best Fitness : {{ best_fitness }}</p>
+          <a href="{{ url_for('matchmaking', individual_idx=best_individual_idx) if best_individual_idx else '#' }}" 
+            class="border tombol totalplayer my-4 text-decoration-none py-1 px-5" style="margin-left: 75px;">Show More</a>
+        </div>
+
+        <a href="{{ url_for('play_now_page') }}"><button class="totalplayer rounded border playnow">PLAY
+            NOW</button></a>
+      </div>
+    </div>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    {% if form.errors %}
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        html: `
+        {% for input, error in form.errors.items() %}
+        {{ input }}<br>{{ error }}<br>
+        {% endfor %}
+        `,
+      })
+    {% endif %}
+    {% if chart_data %}
+      new Chart(
+        document.getElementById('best-fitness'),
+        {
+          type: 'line',
+          data: {
+            labels: {{ chart_data['x']|tojson }},
+            datasets: [
+              {
+                label: 'Best Fitness',
+                data: {{ chart_data['y']|tojson }},
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+              }
+            ]
+          },
+        }
+      )
+    {% endif %}
+  </script>
+</body>
+
+</html>

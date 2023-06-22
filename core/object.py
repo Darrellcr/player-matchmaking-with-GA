@@ -26,13 +26,13 @@ class Player:
     is_inputted: bool = field(default=False)
 
     @classmethod
-    def generate_player_pool(cls, size: int, mean: int = 1800, std: int = 300) -> set[Player]:
+    def generate_player_pool(cls, size: int, mean: int = 1800, std: int = 400) -> set[Player]:
         player_pool: set[Player] = set()
         roles = tuple(Role)
         for _ in range(size):
             player = cls(
                 mmr=int(random.gauss(mean, std)),
-                most_played_role=random.choice(roles),
+                most_played_role=random.choices(roles, weights=[1 for _ in range(len(roles))], k=1)[0],
             )
             player_pool.add(player)
         return player_pool
@@ -43,14 +43,19 @@ class Team:
     players: list[Player]
 
     @classmethod
-    def generate_team_pool(cls, player_pool: set[Player], percentage: float = 0.9) -> tuple[list[Team], set[Player]]:
+    def generate_team_pool(cls, player_pool: set[Player], percentage: float = 0.9, inputted_player: Player = None) -> list[Team]:
+        if inputted_player is not None:
+            player_pool.add(inputted_player)
+
+        temp_player_pool = player_pool.copy()
         number_of_teams = cls._calculate_number_of_team(
             len(player_pool), percentage)
         team_pool: list[Team] = []
         for _ in range(number_of_teams):
-            team = cls([player_pool.pop() for _ in range(5)])
+            team = cls([temp_player_pool.pop() for _ in range(5)])
             team_pool.append(team)
-        return team_pool, player_pool
+
+        return team_pool
 
     @staticmethod
     def _calculate_number_of_team(number_of_player, percentage):
@@ -69,24 +74,27 @@ class Team:
                        for player in self.players) / len(self.players)
         return math.sqrt(variance)
 
+    def contains_inputted_player(self) -> bool:
+        return any(player.is_inputted for player in self.players)
+
     def count_distinct_role(self) -> int:
         return len(set(player.most_played_role for player in self.players))
-
-    def mutate(self, both_team_players, remaining_players: set[Player], mutation_rate: float) -> None:
+    
+    def mutate(self, both_team_players, player_pool: set[Player], mutation_rate: float) -> None:
         for i, player in enumerate(self.players):
             if random.random() >= mutation_rate:
                 continue
 
-            popped_player = remaining_players.pop()
+            popped_player = player_pool.pop()
             is_popped_player_legal = popped_player not in both_team_players
             while not is_popped_player_legal:
-                remaining_players.add(popped_player)
-                popped_player = remaining_players.pop()
+                player_pool.add(popped_player)
+                popped_player = player_pool.pop()
                 is_popped_player_legal = popped_player not in both_team_players
 
 
             self.players[i] = popped_player
-            remaining_players.add(player)
+            player_pool.add(popped_player)
 
     def print_players(self) -> None:
         for player in self.players:
@@ -110,6 +118,7 @@ class Individual:
         1. team std
         2. number of distinct role
         3. mmr diff between team
+        4. player inputan atau bukan
         '''
         fitness1 = 1100
         fitness1 -= self.team1.calculate_mmr_std() ** 1.25 / 2
@@ -126,6 +135,9 @@ class Individual:
         fitness3 = max(fitness3, 0)
 
         fitness_score = fitness1 + fitness2 + fitness3
+        if self.team1.contains_inputted_player() or self.team2.contains_inputted_player():
+            fitness_score += 4000
+
         return max(fitness_score, 1)
 
     def pmx_crossover(self, other: Individual) -> tuple[Individual, Individual]:
@@ -148,41 +160,11 @@ class Individual:
             for i, player in enumerate(offspring1_left):
                 legal_player = player
                 is_player_legal = legal_player.id not in offspring1_right_player_ids
-                counter = 0
                 while not is_player_legal:
                     legal_player = offspring2_right[offspring1_right.index(
                         legal_player)]
                     is_player_legal = legal_player.id not in offspring1_right_player_ids
-                    counter += 1
-                    if counter > 10:
-                        print('----offspring1_left----')
-                        for player in offspring1_left:
-                            print(player)
-                        print('----offspring1_right----')
-                        for player in offspring1_right:
-                            print(player)
-                        print('----offspring2_right----')
-                        for player in offspring2_right:
-                            print(player)
-                        print(f'{legal_player=}')
-                        raise Exception('Infinite loop')
                 legal_offspring[i] = legal_player
-
-            player_ids = tuple(player.id for player in legal_offspring)
-            player_ids_set = set(player_ids)
-            if len(player_ids_set) != 10:
-                print('----offspring1_left----')
-                for player in offspring1_left:
-                    print(player)
-                print('----offspring1_right----')
-                for player in offspring1_right:
-                    print(player)
-                print('----offspring2_right----')
-                for player in offspring2_right:
-                    print(player)
-                print(f'{legal_player=}')
-                print(f'{player_ids=}')
-                raise Exception('Kenapa ini aaaa')
 
             return Individual.from_array(legal_offspring)
 
@@ -204,10 +186,10 @@ class Individual:
         team2 = Team(array[5:])
         return cls(team1, team2)
 
-    def mutate(self, remaining_players: set[Player], mutation_rate: float = 0.01) -> None:
+    def mutate(self, player_pool: set[Player], mutation_rate: float = 0.01) -> None:
         both_team_players = self.team1.players + self.team2.players
-        self.team1.mutate(both_team_players, remaining_players, mutation_rate)
-        self.team2.mutate(both_team_players, remaining_players, mutation_rate)
+        self.team1.mutate(both_team_players, player_pool, mutation_rate)
+        self.team2.mutate(both_team_players, player_pool, mutation_rate)
 
 def check_player_mmr_distribution() -> None:
     player_pool = list(Player.generate_player_pool(1000))
@@ -218,7 +200,7 @@ def check_player_mmr_distribution() -> None:
 
 def test_mutation():
     player_pool: set[Player] = Player.generate_player_pool(1000)
-    team_pool, remaining_players = Team.generate_team_pool(player_pool)
+    team_pool = Team.generate_team_pool(player_pool)
 
     population = Individual.generate_population(team_pool)
 
@@ -226,7 +208,7 @@ def test_mutation():
     population[0].team1.print_players()
     print('Team 2')
     population[0].team2.print_players()
-    population[0].mutate(remaining_players=remaining_players)
+    population[0].mutate(player_pool=player_pool)
     print()
     print('Team 1')
     population[0].team1.print_players()
@@ -236,7 +218,7 @@ def test_mutation():
 
 def test_crossover():
     player_pool: set[Player] = Player.generate_player_pool(1000)
-    team_pool, remaining_players = Team.generate_team_pool(player_pool)
+    team_pool = Team.generate_team_pool(player_pool)
 
     population = Individual.generate_population(team_pool)
 
@@ -253,7 +235,7 @@ def test_crossover():
 
 def test_fitness():
     player_pool: set[Player] = Player.generate_player_pool(1000)
-    team_pool, remaining_players = Team.generate_team_pool(player_pool)
+    team_pool = Team.generate_team_pool(player_pool)
 
     population = Individual.generate_population(team_pool)
 
